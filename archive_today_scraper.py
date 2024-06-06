@@ -20,8 +20,6 @@ def get_bio(soup, profile_dict, mem_date):
 
     if mem_date >= 2021:
         bio = possible_bio_list[-3].get_text()
-
-
     # need to check for dates
 
     '''
@@ -79,20 +77,20 @@ def get_post_content(soup, profile_dict):
     for post in insta_body:
 
         post_content = post.find('a')
-        
-        if(post_content) != None:
+
+        if(post_content) != None and post.find('div').find('a') == None:
             dict_key_name = "postNum" + str(post_count)
 
             post_link = post_content.get('href')
-            
+
             img_text = post_content.find('img').get('alt')
-            if (post_content.find('span') != None):
+
+            if post_content.find('span') != None:
                 post_type = post_content.find('span').get('aria-label')
+            elif (post_content.find('svg') != None):
+                post_type = post_content.find('svg').get('aria-label')
             else:
-                if (post_content.find('svg') != None):
-                    post_type = post_content.find('svg').get('aria-label')
-                else:
-                    post_type = 'Photo'
+                post_type = 'Photo'
 
             post_dictionary[dict_key_name] = {}
 
@@ -105,6 +103,8 @@ def get_post_content(soup, profile_dict):
     profile_dict["Posts"] = post_dictionary
         
     return profile_dict
+
+
 
 def get_memento_date(soup):
     archive_date_str = soup.find('span').get_text()
