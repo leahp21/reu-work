@@ -9,7 +9,7 @@ import sys
 initially tried this link: https://archive.ph/A4ya8
 '''
 
-def get_bio(soup, profile_dict, mem_date):
+def get_bio(soup, profile_dict):
     possible_bio_list = soup.find('section').find('section').find_all('div')
     bio = "no bio"
 
@@ -18,26 +18,22 @@ def get_bio(soup, profile_dict, mem_date):
             if div_tag.find('span') != None:
                 bio = div_tag.find('span').get_text()
 
-    if mem_date >= 2021:
+    if int(profile_dict['date']) >= 2021:
         bio = possible_bio_list[-3].get_text()
     # need to check for dates
-
-    '''
-    if possible_list[1].get_text() == "no other snapshots from this url":
-        bio = possible_list[8].get_text()
-    elif possible_list[7].get_text() == ".":
-        bio = possible_list[12].get_text()
-    else:
-        bio = possible_list[7].get_text()
-    '''
 
     profile_dict['bio'] = bio
 
     return profile_dict
 
 def get_username(soup, profile_dict):
-    username = soup.find('section').find('h2').get_text()
-    profile_dict["username"] = username
+
+    username = soup.find('section')
+
+    if (username == None):
+        sys.exit()
+
+    profile_dict["username"] = username.find('h2').get_text()
 
     return profile_dict
     
@@ -104,21 +100,23 @@ def get_post_content(soup, profile_dict):
         
     return profile_dict
 
-
-
-def get_memento_date(soup):
+def get_memento_date(soup, user_profile_dict):
     archive_date_str = soup.find('span').get_text()
     date = re.search('archived\s([^>]+)',archive_date_str).group(1)
     split_date = date.split(" ")
-    memento_year = int(split_date[2])
-    return memento_year
+    memento_year = split_date[2]
+
+    user_profile_dict['date'] = memento_year
+
+    return user_profile_dict
 
 def write_dict_to_json(dictionary):
     filename = dictionary["username"] + '.json'
     json_out = open(filename, 'w')
     json_out.write(json.dumps(dictionary, indent=4))
     json_out.close()
-    
+
+    sys.stdout.write(json.dumps(dictionary, indent=4))
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -134,15 +132,15 @@ if __name__ == "__main__":
     html_out.write(str(soup.prettify()))
     html_out.close()
 
-    archive_date = get_memento_date(soup)
-
     user_profile_dict = {}
+
+    user_profile_dict = get_memento_date(soup, user_profile_dict)
 
     user_profile_dict = get_username(soup,user_profile_dict)
     user_profile_dict = get_followers(soup, user_profile_dict)
     user_profile_dict = get_post_count(soup, user_profile_dict)
 
-    user_profile_dict = get_bio(soup, user_profile_dict,archive_date)
+    user_profile_dict = get_bio(soup, user_profile_dict)
     user_profile_dict = get_post_content(soup, user_profile_dict)
     write_dict_to_json(user_profile_dict)
 
