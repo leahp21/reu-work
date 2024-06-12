@@ -2,18 +2,16 @@
 given a URL, call CDX API. Add memento links to a URL and 
 '''
 
-import requests
 from bs4 import BeautifulSoup
 import argparse
 import re
-import sys
-import subprocess
 import os
 import json
 import pandas as pd
 from datetime import datetime
 import time
 import numpy as np
+import matplotlib.pyplot as plt
 
 def memgator_for_link(url):
     dict_of_links = {}
@@ -67,7 +65,6 @@ def split_memento_links(filename):
         
             if "web.archive.org" in parsed_url:
                 #look at year of memento and see if it matches the eligibility
-                print(split_date)
                 if (int(split_date[3]) < 2019) and (int(split_date[3]) >= 2013):
                     valid_links["wayback"].append([parsed_url,formatted_date])
             else:
@@ -87,12 +84,12 @@ def send_to_scraper(memento_dict):
     wayback_data = pd.DataFrame(columns=['Date','Follower_count',"Comment_count", 'Like_count','Hashtags','Hashtag_count','Mentions','Mention_count'])
 
     for memento_type, memento_list in memento_dict.items():
-        #print(memento_type, memento_list)
         if memento_type == 'wayback':
 
             for wayback_mem_url in memento_dict['wayback']:
+                print('reached')
                 wayback_data = process_wayback_mem(wayback_mem_url, wayback_data)
-                time.sleep(10)
+                time.sleep(60)
 
             pd.set_option('display.max_columns', None)
             pd.set_option('display.max_rows', None)
@@ -100,23 +97,18 @@ def send_to_scraper(memento_dict):
             wayback_data.set_index('Date',inplace=True)
 
         else:
-             # = {'follower_count':follower_count, 'hashtags_used': ",".join(hashtag_list), 'mentions': ','.join(mention_list)}
-            # archive_today_data = pd.DataFrame(columns=['Date','Follower_count','Hashtags','Mentions'])
 
             for archive_today_url in memento_dict['archive_today']:
-                # print(k)
                 archive_today_data = process_archive_mem(archive_today_url, archive_today_data)
-                k += 1
             
             archive_today_data.set_index('Date', inplace = True)
 
-        result = wayback_data.append(archive_today_data)
-        print(result)
+    result = wayback_data.append(archive_today_data)
+
+    return result
 
 
 def process_wayback_mem(mem_link, data_chart):
-
-    # test_link = "https://web.archive.org/web/20161117205615/https://www.instagram.com/army_of_jesus_/"
 
     scraper_command = "python3 instagram_memento_scrape.py --urim " + mem_link[0] + " > scraper_output.json"
     os.system(scraper_command)
@@ -134,24 +126,24 @@ def process_wayback_mem(mem_link, data_chart):
     
     hashtag_list = []
     mention_list = []
-    follower_count = json_content['profileUser']['count']['followed_by']
+    if 'count' in json_content['profileUser'].keys():
+        follower_count = json_content['profileUser']['count']['followed_by']
+    else:
+        follower_count = json_content['profileUser']['counts']['followed_by']
     comment_count = 0
     like_count = 0
-
-        # likes
-        # comment count
         
-    for post_detail in json_content['userMedia']:
+    for post_detail in json_content['userMedia']: 
 
-        print(post_detail) 
+        if (post_detail['caption'] != None):
 
-        if len(re.findall('#\w+',str(post_detail['caption']['text']))) != 0:
-            hashtag_list.extend(re.findall('#\w+',post_detail['caption']['text']))
-        
-        if len(re.findall('@[\w.]+',str(post_detail['caption']['text']))) != 0:
-            mention_list.extend(re.findall('@[\w.]+',post_detail['caption']['text']))
+            if len(re.findall('#\w+',str(post_detail['caption']['text']))) != 0:
+                hashtag_list.extend(re.findall('#\w+',post_detail['caption']['text']))
+            
+            if len(re.findall('@[\w.]+',str(post_detail['caption']['text']))) != 0:
+                mention_list.extend(re.findall('@[\w.]+',post_detail['caption']['text']))
 
-        like_count += post_detail["likes"]['count']
+            like_count += post_detail["likes"]['count']
         
         comment_count += post_detail['comments']['count']
 
@@ -193,8 +185,8 @@ def process_archive_mem(archive_today_link, data_chart):
             if len(re.findall('#\w+',value['image-text'])) != 0:
                 hashtag_list.extend(re.findall('#\w+',value['image-text']))
 
-            if len(re.findall('@[\w.]+',str(value['image-text']))) != 0:
-                mention_list.extend(re.findall('@[\w.]+',value['image-text']))
+            if len(re.findall('@\w+(?:\.\w+)*',str(value['image-text']))) != 0:
+                mention_list.extend(re.findall('@\w+(?:\.\w+)*',value['image-text']))
     
     # matching hashtags and mentions in bio
     if len(re.findall('#\w+',json_content['bio'])) != 0:
@@ -219,19 +211,18 @@ def process_archive_mem(archive_today_link, data_chart):
 
     return data_chart
 
-def process_hashtags(data_chart):
-    # count hashtags for a given account 
-
-    hashtag_count 
-
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("url")
     args = parser.parse_args()
 
+    username = re.match('www\.instagram\.com\/([^\/]+)\/', args.url).group(1) 
+
     iterate_memgator(args.url)
     memento_dict = split_memento_links("memgator_mementos.html")
-    #print(memento_dict)
-    send_to_scraper(memento_dict)
+    data_chart = send_to_scraper(memento_dict)
+
+    filename = username + '.csv'
+
+    data_chart.to_csv(filename, index=True)
+    
