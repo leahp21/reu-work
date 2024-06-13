@@ -9,46 +9,57 @@ import sys
 initially tried this link: https://archive.ph/A4ya8
 '''
 
+'''
+gets the user's bio using bs4
+'''
 def get_bio(soup, profile_dict):
     possible_bio_list = soup.find('section').find('section').find_all('div')
     bio = "no bio"
 
+    # gets bio for users 2019 - 2020
     for div_tag in possible_bio_list:
         if (div_tag.find('h1') != None):
             if div_tag.find('span') != None:
                 bio = div_tag.find('span').get_text()
 
+    # gets bio if the memento is from 2021-2023
     if int(profile_dict['date']) >= 2021:
         bio = possible_bio_list[-3].get_text()
-    # need to check for dates
 
     profile_dict['bio'] = bio
 
     return profile_dict
 
+'''
+gets the user's username
+'''
 def get_username(soup, profile_dict):
 
     username = soup.find('section')
 
+    # if username is empty (as in the html page is empty) exit the program
     if (username == None):
         sys.exit()
 
     profile_dict["username"] = username.find('h2').get_text()
 
     return profile_dict
-    
+
+'''
+    gets the follower count 
+'''
 def get_followers(soup, profile_dict):
     follower_count = None
 
     possible_follower_count = soup.find('section').find('ul').find_all('a')
     
+    # gets the followers for users 2022 and back
     for text in possible_follower_count:
         maybe_match = text.get_text()
         if "followers" in maybe_match:
             follower_count = maybe_match
 
     #2023 forward
-
     if follower_count == None:
         possible_follower_count = soup.find('section').find('section').find('ul').find_all('li')
         follower_count = possible_follower_count[1].get_text()
@@ -57,12 +68,18 @@ def get_followers(soup, profile_dict):
 
     return profile_dict
 
+'''
+gets the post count of the user
+'''
 def get_post_count(soup, profile_dict):
     post_count = soup.find('section').find('li').get_text()
     profile_dict['post_count'] = post_count
 
     return profile_dict
 
+'''
+gets post content (alt-text and media type)
+'''
 def get_post_content(soup, profile_dict):
 
     post_dictionary = {}
@@ -70,6 +87,7 @@ def get_post_content(soup, profile_dict):
 
     insta_body = soup.find('article').find_all('div')
 
+    # for all possible posts, find the post link, image alt-text and media type of post 
     for post in insta_body:
 
         post_content = post.find('a')
@@ -100,6 +118,9 @@ def get_post_content(soup, profile_dict):
         
     return profile_dict
 
+'''
+get the year of the memento (is important for cases)
+'''
 def get_memento_date(soup, user_profile_dict):
     archive_date_str = soup.find('span').get_text()
     date = re.search('archived\s([^>]+)',archive_date_str).group(1)
@@ -110,6 +131,9 @@ def get_memento_date(soup, user_profile_dict):
 
     return user_profile_dict
 
+'''
+converts dictionary of account details to json file and std.out
+'''
 def write_dict_to_json(dictionary):
     filename = dictionary["username"] + '.json'
     json_out = open(filename, 'w')
