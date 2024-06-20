@@ -16,16 +16,15 @@ def get_bio(soup, profile_dict):
     possible_bio_list = soup.find('section').find('section').find_all('div')
     bio = "no bio"
 
-    # gets bio for users 2019 - 2020
-    for div_tag in possible_bio_list:
-        if (div_tag.find('h1') != None):
-            if div_tag.find('span') != None:
-                bio = div_tag.find('span').get_text()
-
-    # gets bio if the memento is from 2021-2023
-    if int(profile_dict['date']) >= 2021:
-        bio = possible_bio_list[-3].get_text()
-
+    # gets bio for users. depends on if they have their name and Public figure status set
+    if (possible_bio_list[-2].get_text() == ""):
+        if possible_bio_list[-1].find_all('span') != None:
+            bio = possible_bio_list[-1].find_all('span')[-1].get_text()
+    else:
+        if (len(possible_bio_list) >= 2):
+            if len(possible_bio_list[-2].find_all('span')) != 0:
+                bio = possible_bio_list[-2].find_all('span')[-1].get_text()
+    
     profile_dict['bio'] = bio
 
     return profile_dict
@@ -41,7 +40,10 @@ def get_username(soup, profile_dict):
     if (username == None):
         sys.exit()
 
-    profile_dict["username"] = username.find('h2').get_text()
+    if username.find('h2') == None:
+        profile_dict['username'] = username.find('h1').get_text()
+    else:
+        profile_dict["username"] = username.find('h2').get_text()
 
     return profile_dict
 
