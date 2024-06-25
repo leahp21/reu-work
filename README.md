@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-get_html.py -> python script that takes HTTP requests and puts the response in an html file. Used for exploring the re and BeautifulSoup Python modules
-
-=======
 ***2024 ODU Disinformation Detection and Analytics REU***
 
 Here are some cool files for you to check out!
@@ -40,4 +36,3 @@ python3 process_memento.py www.instagram.com/robertfkennedyjr/
 ```
 python3 process_memento.py [instagram_uri-r]
 ```
->>>>>>> origin/main
