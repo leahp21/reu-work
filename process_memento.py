@@ -1,5 +1,5 @@
 '''
-given a URL, call CDX API. Add memento links to a URL and 
+given a URL, Add memento links to a URL and 
 '''
 
 from bs4 import BeautifulSoup
@@ -20,9 +20,9 @@ def memgator_for_link(url):
 collect memgator html
 '''
 
-def iterate_memgator(url):
+def iterate_memgator(url, username):
     print("Getting memgator URIM's... may take a bit")
-    docker_link = "docker container run -it --rm oduwsdl/memgator " + url + "> memgator_mementos.html"
+    docker_link = "docker container run -it --rm oduwsdl/memgator " + url + "> " + username + ".html"
     os.system(docker_link)
 
 '''
@@ -147,11 +147,13 @@ def process_wayback_mem(mem_link, data_chart):
         
         comment_count += post_detail['comments']['count']
 
-    if len(re.findall('#\w+',json_content['profileUser']['bio'])) != 0:
-        hashtag_list.extend(re.findall('#\w+',json_content['profileUser']['bio']))
 
-    if len(re.findall('@[\w.]+',json_content['profileUser']['bio'])) != 0:
-        mention_list.extend(re.findall('@[\w.]+',json_content['profileUser']['bio']))
+    if json_content['profileUser']['bio'] != None:
+        if len(re.findall('#\w+',json_content['profileUser']['bio'])) != 0:
+            hashtag_list.extend(re.findall('#\w+',json_content['profileUser']['bio']))
+
+        if len(re.findall('@[\w.]+',json_content['profileUser']['bio'])) != 0:
+            mention_list.extend(re.findall('@[\w.]+',json_content['profileUser']['bio']))
 
     memento_row = {'Date':mem_link[1],'Follower_count':follower_count, 'Comment_count': comment_count, 'Like_count': like_count, 
                    'Hashtags': ",".join(hashtag_list), 'Hashtag_count': len(hashtag_list), 'Mentions': ','.join(mention_list), 'Mention_count': len(mention_list)}
@@ -171,7 +173,10 @@ def process_archive_mem(archive_today_link, data_chart):
     try: 
         json_content = json.load(file)
     except:
-        print('error opening file (maybe file is empty)')
+        print('error opening file')
+        memento_row = {'Date':archive_today_link[1],'Follower_count':np.nan, 'Hashtags': np.nan, 'Mentions': np.nan}
+        data_chart = data_chart.append(memento_row, ignore_index=True)
+
         return data_chart
     
     hashtag_list = []
@@ -203,7 +208,10 @@ def process_archive_mem(archive_today_link, data_chart):
     elif('k' in follower_count) or ('K' in follower_count):
         follower_count = int(float(re.match('([^>]+)[A-Za-z]',follower_count).group(1)) * 1000)
     else:
-        follower_count = int(follower_count)
+        if (',' in follower_count):
+            follower_count = int(follower_count.split(',')[0] + follower_count.split(',')[1])
+        else:
+            follower_count = int(follower_count)
 
     memento_row = {'Date':archive_today_link[1],'Follower_count':follower_count, 'Hashtags': ",".join(hashtag_list), 
                    'Hashtag_count': len(hashtag_list), 'Mentions': ','.join(mention_list), 'Mention_count':len(mention_list)}
@@ -218,8 +226,8 @@ if __name__ == "__main__":
 
     username = re.match('www\.instagram\.com\/([^\/]+)\/', args.url).group(1) 
 
-    iterate_memgator(args.url)
-    memento_dict = split_memento_links("memgator_mementos.html")
+    iterate_memgator(args.url, username)
+    memento_dict = split_memento_links(username+ ".html")
     data_chart = send_to_scraper(memento_dict)
 
     filename = username + '.csv'
