@@ -1,0 +1,10 @@
+exported_df/anti_vax/childrenshealthdefense.csv,
+exported_df/anti_vax/highwiretalk.csv,
+exported_df/anti_vax/londonrealtv.csv,
+exported_df/anti_vax/robertfkennedyjr.csv,
+exported_df/anti_vax/patrickbetdavid.csv,
+exported_df/anti_vax/drbuttar.csv,
+exported_df/anti_vax/picphysicians.csv,
+exported_df/anti_vax/vaccinefreedom.csv,
+exported_df/anti_vax/Valuetainment.csv,
+exported_df/anti_vax/westonaprice.csv
