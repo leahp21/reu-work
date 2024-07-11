@@ -3,7 +3,10 @@ from sklearn.cluster import KMeans
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
-from scipy.cluster.hierarchy import dendrogram, linkage
+from sklearn.manifold import MDS
+from sklearn.feature_extraction.text import TfidfVectorizer
+import plotly.express as px
+
 import argparse
 import re 
 import matplotlib.pyplot as plt
@@ -17,11 +20,12 @@ def prep_for_clustering(dictionary):
 
     new_df = pd.DataFrame.from_dict(new_dict)
 
-
     for key, value_list in dictionary.items():
 
         for value in value_list:
+
             if value not in new_df.columns:
+        
                 new_df[value] = hash_count_list_function(value, dictionary)
 
 
@@ -29,16 +33,51 @@ def prep_for_clustering(dictionary):
     pd.set_option('display.max_columns', 10)
     pd.set_option('display.width', 150)
 
-    print(new_df)
+    #print(new_df)
 
-    '''
-    kmeans = KMeans(n_clusters=3)
-    kmeans.fit(new_df.drop('Username', axis=1))
+    
+    mds = MDS(n_components=2)
+    new_df_reduced = mds.fit_transform(new_df.drop('Username', axis=1))
+
+    inertias = []
+
+    for i in range(1,len(dictionary)):
+        kmeans = KMeans(n_clusters=i)
+        kmeans.fit(new_df_reduced)
+        inertias.append(kmeans.inertia_)
+
+    plt.plot(range(1,len(dictionary)), inertias, marker='o')
+    plt.title('Elbow method')
+    plt.xlabel('Number of clusters')
+    plt.ylabel('Inertia')
+    plt.show()
+
+    kmeans = KMeans(n_clusters=4, random_state=2)
+    kmeans.fit(new_df_reduced)
     clusters = kmeans.labels_
+    #new_df['cluster'] = clusters
+    #df_sorted = new_df.sort_values(by='cluster')
+
+    plt.figure(figsize=(10,8))
+
+    df_user_added = pd.DataFrame(new_df_reduced)
+    df_user_added['Username'] = new_df['Username']
+
+    print(df_user_added)
+
+    plot = px.scatter(df_user_added, x=0, y=1, color=clusters, hover_name='Username', title="Health Authority and Anti-vax Clustering")
+
+    #plt.scatter(new_df_reduced[:, 0], new_df_reduced[:, 1], c=clusters)
+    plt.title("Clustering Users by Hashtags")
+
+    plot.show()
+
     '''
 
     Z = linkage(new_df.drop('Username', axis=1), method='ward')
     new_df.set_index('Username', inplace=True)
+
+    
 
     plt.figure(figsize=(10, 8))
     dendrogram(Z, labels=new_df.index, leaf_rotation=90)
@@ -46,6 +85,7 @@ def prep_for_clustering(dictionary):
     plt.xlabel('Words')
     plt.ylabel('Distance')
     plt.show()
+    '''
 
 # Convert the scaled features back to a DataFrame
 
@@ -63,13 +103,17 @@ def classify_hashtags(dictionary):
                  "#mint", "#pie", "#wine", "#strawberries", "#sweetpotato", "#turmeric", "#curcumin", "#goldenmilk", "#gmo", "#pudding",
                  "#carrot", "#dessert", "#veggies", "#honey", "#veggie", "#rawfood", "#lemon", "#falafel", "#garlic", "#cumin", "#salt", "#sesameseeds", "#soy", "#nogmo",
                  "#sugar", "#watermelon", "#celery", "#broccoli", "#cantaloupe", "#radish", "#tomato", "#hymalayansalt", "#blackcuminseed", "#maca",
-                 "#citrus", "#capers", "#seafood", "#mushrooms", "#beans", "#nuts", "#wildsalmon", "#keto", "#ketodiet", "#castoroil", "#rice", "#cassava", "#maize"] 
+                 "#citrus", "#capers", "#seafood", "#mushrooms", "#beans", "#nuts", "#wildsalmon", "#keto", "#ketodiet", "#castoroil", "#rice", "#cassava", "#maize", "#noniroot",
+                 "#cocoanibs","#cocaonibs", "#wheat", "#eatmoreavocado", "#springwater", "#superherbs", "#cocaopods", "#corn"] 
 
     disease_hash = ["#aids", "#hpv","#transversemyelitis","#hepatitisb","#multiplesclerosis", "#autism", "#inflammation", "#sids",
                     "#sidsawareness", "#suddendeath","#suddeninfantdeathsyndrome","#cancer", "#diabetes", "#flu",
                     "#infertility", "#breastcancer", "#hypothyroidism", "#dementia", "#headaches", "#depression", "#chronicfatigue", "#seizure",
                     "#decreasedvision", "#bloodpressure", "#autoimmunedisorder", "#hyperthyroidism", "#brainfog", "#hiv", "#defeatmalaria", "#malaria", "#worldaidsday",
-                    "#rethinkhiv", "#hivstatus", "#endpolio", "#trypanosomiasis", "#africansleepingsickness", "#infectiousdisease"]
+                    "#rethinkhiv", "#hivstatus", "#endpolio", "#trypanosomiasis", "#africansleepingsickness", "#infectiousdisease", "#WorldAutismAwarenessDay",
+                    "#tb", "#childhoodtb", "#ebola", "#measles", "#diseasedetective", "#breastcancerawareness", "#influenza", "#fasd", "#suicideprevention", "#bcam",
+                    "#zika", "#zikavirus", "#virus", "#worldtbday", "#bleedingdisorders", "#autismawareness", "#yellowfever", "#cholera", "#cervicalcancer",
+                    "#antimicrobialresistance"]
 
     health_hash = ["#vitaminc", "#vitamind","#iodine", "#health", "#antibodyenhancement","#vegan", "#vegetarian", "#veganfitness", "#vegetarian", "#plantprotein", "#plantbased",
                    "#centralnervoussystem","#naturalhealth","#brainhealth", "#gut", "#calcium", "#magnesium", "#copper", "#iron", "#zinc", "#protein",
@@ -78,25 +122,31 @@ def classify_hashtags(dictionary):
                    "#gluten", "#healthy", "#detox", "#holistic", "#chiropractors", "#shoulder", "#injury", "#stemcells", "#bones", "#plant", "#alkaline", "#natural",
                    "#organic", "#diet", "#mri", "#healthylifestyle", "#instahealth", "#gmofree", "#naturalhealing", "#organiclife", "#quitsmoking", "#cancerprevention",
                    "#hearthealth", "#bonehealth", "#healthychoices", "#cancerfighting", "#holistichealing", "#hyperbaricoxygentherapy", "#oxygenflow", 
-                   "#tips4health", "#coffeeenema", "#globalhealth"]
+                   "#tips4health", "#coffeeenema", "#globalhealth", "#menshealthweek", "#MentalHealth", "#NMHW", "#tobaccofree", "#vitals", "#vitalsigns", "#getactive",
+                   "#heartage", "#fitness", "#antibiotics", "#stopdrugresistance", "#cervicalhealthmonth", "#humanhealth", "#guthealth", "#stressreduction"]
 
     covid_hash = ["#coronavirus", "#covid_19", "#covid", "#covidvaccine","#pandemic", "#lockdown", "#twindemic", "#covid", "#covid19", "#wuhan", "#labcreated",
                   "#chinavirus", "#drlimengyan", "#nomasks", "#nomandates", "#coronafalsealarm","#vaxvsunvax","#pland3mic", "#mask", "#contagionmyth", "#maskyourkids",
-                  "#noforrealmaskyourkids", ]
+                  "#noforrealmaskyourkids", "#quarantine", "#inthistogether", "#unprecendentedtimes", "#corona", "#maskmandate", "#ppe", "#covid19sucks", "#kungflu",
+                  "#sarscov2", "#flattenthecurb"]
     
     vaccine_hash = ["#vaccine", "#vaccinesafety", "#vaccineinjury", "#vaers", "#hpvvaccine", "#flushot", "#vaccines", "#masteringvaccineinfo",
                     "#vaccinetrials", "#noforcedflushots", "#vaccineeducation", "#vaccineroulette", "#4monthshots","#vaccineriskawareness", "#vaccinesarepoison",
                     "#vaccinefree","#deathaftervaccines","#vaccinations","#noshots","#vaccineskill","#informedconsent", "#learntherisk", "#informedconsent", "#childrenshealthdefense",
                     "#dtap", "#nvic", "#mmr", "#truthaboutvaccines", "#truthaboutcancer", "#thetruthaboutcancer", "#ttac", "#medicalfreedomactivist",
-                    "#medicalfreedomofchoice", "#medicalfreedomwarrior", "#medicalfreedom", "#wapf", "#vaccineswork"]
+                    "#medicalfreedomofchoice", "#medicalfreedomwarrior", "#medicalfreedom", "#wapf", "#vaccineswork", "#vsd", "#immunizations", "#immunization"]
     
-    other_conspiracy = ["#chemtrails", "#geoengineering", "#truther", "#alexjones", "#cloudseeding", "#rockefeller", "#rothschild", "#badscience"]
+    other_conspiracy = ["#chemtrails", "#chemicalskies", "#geoengineering", "#truther", "#alexjones", "#cloudseeding", "#rockefeller", "#rothschild", "#badscience", "#conspiracy",
+                        "#tinfoilhat", "#conspiracytheory", "#conspiracytheorist", "#contagionmyth"]
 
     pharmaceuticals_hash = ["#bigpharma", "#bigchemical", "#billgates", "#gates","#gatesfoundation",
-                            "#pfizer", "#moderna", "#merck", "#gardasil", "#astrazeneca", "#pharma", "#iheartpharma"]
+                            "#pfizer", "#moderna", "#merck", "#gardasil", "#astrazeneca", "#pharma", "#iheartpharma", "#pharma", "#johnsonandjohnson", "#abbvie", "#bayer",
+                            "#novartis"]
 
     gov_hash = ["#anthonyfauci", "#fauci", "#corruption", "#bigbrother", "#censorship", "#censorshipisreal", "#cdc", "#nih", "#fda","#cia", "#surveillance", "#who",
-                "#politics", "#tyranny", "#government", "#1984", "#orwell", "#aldoushuxley", "#huxley", "#bravenewworld", "#georgeorwell", "#agenda2030", ]
+                "#politics", "#tyranny", "#government", "#1984", "#orwell", "#aldoushuxley", "#huxley", "#bravenewworld", "#georgeorwell", "#agenda2030", "#cdcglobal", "#SpotCDC",
+                "#cdctips", "#cdcgrandrounds", "#iamcdc", "#gov", "#anarchy", "#nineteeneightyfour", "#rebel", "#rebellion", "#ccp", "#putin", "#capitalism", "#democrats", "#republicans",
+                "#republic", "#democracy", "#communism", "#irs", "#feds", "#despot", "#vote", "#voting", "#constitution", "#bureaucrats", "#congress", "#oligarch", "#policestate", "#taxes"]
     
 
     for key, value_list in dictionary.items():
@@ -145,13 +195,33 @@ def hash_count_list_function(target_hashtag, dictionary):
     hash_count_list = []
 
     for key, value_list in dictionary.items():
-        hash_count = 0
 
-        for hash in value_list:
-            if hash == target_hashtag:
-                hash_count += 1
+        hash_count = 0
         
-        hash_count_list.append(hash_count)
+        for hashtag in value_list:
+
+            if hashtag == target_hashtag:
+                hash_count += 1
+
+        hash_count = hash_count
+        hash_count_list.append(hash_count/len(value_list))
+
+        '''
+        tfidf = TfidfVectorizer()
+        result = tfidf.fit_transform(dictionary[key]).toarray()
+        print(tfidf.vocabulary_)
+        print(result)        
+
+        if target_hashtag in tfidf.vocabulary_.keys():
+            hashtag_index = tfidf.vocabulary_[target_hashtag]
+            doc_index = list(dictionary.keys()).index(key)
+            hash_count_list.append(result[doc_index][hashtag_index])
+        else:
+            hash_count_list.append(0)
+        
+    print(hash_count_list)
+
+        '''
     
     return hash_count_list
 
@@ -181,8 +251,9 @@ def generate_hashtag_dictionary(filename):
 
                 for hash in temp_list:
                     hashtag_list.append(hash.lower())
-        
-        hashtag_dictionary[account_name] = hashtag_list
+
+        if len(hashtag_list) != 0:
+            hashtag_dictionary[account_name] = hashtag_list
     
     return hashtag_dictionary
 
