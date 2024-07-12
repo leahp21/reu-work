@@ -19,6 +19,8 @@ def generate_follower_chart(csv_file):
 
         memento_count = 0
         max_follower_count = 0
+        min_follower_count = 0
+
         min_max_follower_growth = 0
         avg_growth = 0
 
@@ -33,8 +35,8 @@ def generate_follower_chart(csv_file):
         df = df.dropna(thresh=2)
 
         if len(df) == 0:
-            follower_df = follower_df.append({"Account Name" : account_name, "Maximum Followers": np.nan, "Max-min Follower growth": np.nan,
-                                          "Average follower growth": np.nan, "Number of mementos": np.nan, "Memento time covered": np.nan, "Memento date range": np.nan},
+            follower_df = follower_df.append({"Account Name" : account_name, "Maximum Followers": np.nan, "Max-min Follower growth": np.nan, "Minimum Followers": np.nan
+                                              , "Number of mementos": np.nan, "Memento time covered": np.nan, "Memento date range": np.nan},
                                           ignore_index=True)
         else:
             for index, row in df.iterrows():
@@ -57,6 +59,8 @@ def generate_follower_chart(csv_file):
                 first_follower_count = new_df.iloc[0]['Follower_count']
                 last_follower_count = new_df.iloc[-1]['Follower_count']
 
+                min_follower_count = first_follower_count
+
                 min_max_follower_growth = ((last_follower_count - first_follower_count)/first_follower_count) * 100
 
                 start_date = datetime.strptime(new_df.iloc[0]['Date'], "%Y-%m-%d %H:%M:%S")
@@ -65,8 +69,15 @@ def generate_follower_chart(csv_file):
                 date_range = last_date - start_date
 
                 date_range_str = new_df.iloc[0]['Date'], new_df.iloc[-1]['Date']
+                minutes = 0
+                left_over = 0
 
-                date_string = str(date_range.days) + " days, " + str(date_range.seconds) + " seconds"
+                if date_range.seconds > 60:
+                    hours = date_range.seconds // 3660
+                    minutes = (date_range.seconds % 3600) //  60
+                    left_over = (date_range.seconds % 3600) % 60
+
+                date_string = str(date_range.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(left_over) + " seconds"
 
                 avg_growth /= (memento_count - 1)
 
@@ -74,13 +85,13 @@ def generate_follower_chart(csv_file):
             
             else:
                 avg_growth = 0
-                min_max_follower_growth = 0
+                min_follower_count = max_follower_count
                 date_string = np.nan
-                date_range_str = np.nan
+                date_range_str = new_df.iloc[0]['Date']
 
             
-            follower_df = follower_df.append({"Account Name" : account_name, "Maximum Followers": int(max_follower_count), "Max-min Follower growth (%)": min_max_follower_growth,
-                                            "Average follower growth (%)": avg_growth, "Number of mementos": int(memento_count), "Memento time covered": date_string, "Memento date range": date_range_str},
+            follower_df = follower_df.append({"Account Name" : account_name, "Minimum Followers": min_follower_count, "Maximum Followers": int(max_follower_count), "Max-min Follower growth (%)": min_max_follower_growth,
+                                               "Number of mementos": int(memento_count), "Memento time covered": date_string, "Memento date range": date_range_str},
                                             ignore_index=True)
         
     pd.set_option('display.max_columns', None)
