@@ -84,7 +84,7 @@ def search_for_other_hashtags(hashtag, person_name, dictionary):
 
     for name in dictionary.keys():
         if person_name != name:
-            if hashtag in dictionary[name]:
+            if hashtag in dictionary[name][0]:
                 return True
     
     return hashtag_count
@@ -98,7 +98,6 @@ def co_occur_graph(hashtag_dict):
     
     for key,value in hashtag_dict.items():
         if value[1] == hashtag_dict[one_group[0]][1]:
-            print("yay")
             one_group.append(key)
         else:
             other_group.append(key)
@@ -155,11 +154,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     filename=args.csv_files
-    print(args)
    
     dict = generate_hashtag_dictionary(filename)
 
-    if(sys.argv == 1):
+    if args.c == False:
         create_graph(dict)
     else:
+        print('yay')
         co_occur_graph(dict)
