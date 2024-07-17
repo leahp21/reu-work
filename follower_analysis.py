@@ -28,11 +28,12 @@ def generate_follower_chart(csv_file):
         curr_index = 1
 
         new_df = pd.DataFrame()
-        
 
         df = pd.read_csv(csv)
-        df = df.drop_duplicates(subset=['Follower_count', 'Comment_count', 'Like_count','Hashtags', 'Hashtag_count', 'Mentions', 'Mention_count'], keep='first')
+        #df = df.drop_duplicates(subset=['Follower_count', 'Comment_count', 'Like_count','Hashtags', 'Hashtag_count', 'Mentions', 'Mention_count'], keep='first')
         df = df.dropna(thresh=2)
+
+        print("length of dataframe", len(df))
 
         if len(df) == 0:
             follower_df = follower_df.append({"Account Name" : account_name, "Maximum Followers": np.nan, "Max-min Follower growth": np.nan, "Minimum Followers": np.nan
@@ -72,10 +73,14 @@ def generate_follower_chart(csv_file):
                 minutes = 0
                 left_over = 0
 
+                hours = 0
+
                 if date_range.seconds > 60:
                     hours = date_range.seconds // 3660
                     minutes = (date_range.seconds % 3600) //  60
                     left_over = (date_range.seconds % 3600) % 60
+                else:
+                    left_over = date_range.seconds
 
                 date_string = str(date_range.days) + " days, " + str(hours) + " hours, " + str(minutes) + " minutes, " + str(left_over) + " seconds"
 
@@ -96,6 +101,8 @@ def generate_follower_chart(csv_file):
         
     pd.set_option('display.max_columns', None)
     print(follower_df)
+
+    follower_df.to_csv("anti_vax_follower.csv")
 
 if __name__ == "__main__":
 
