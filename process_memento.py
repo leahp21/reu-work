@@ -89,7 +89,7 @@ def send_to_scraper(memento_dict):
             for wayback_mem_url in memento_dict['wayback']:
                 print('reached')
                 wayback_data = process_wayback_mem(wayback_mem_url, wayback_data)
-                time.sleep(60)
+                time.sleep(30)
 
             pd.set_option('display.max_columns', None)
             pd.set_option('display.max_rows', None)
@@ -135,17 +135,18 @@ def process_wayback_mem(mem_link, data_chart):
         
     for post_detail in json_content['userMedia']: 
 
-        if (post_detail['caption'] != None):
+        if 'caption' in post_detail.keys():
+            if (post_detail['caption'] != None):
 
-            if len(re.findall('#\w+',str(post_detail['caption']['text']))) != 0:
-                hashtag_list.extend(re.findall('#\w+',post_detail['caption']['text']))
+                if len(re.findall('#\w+',str(post_detail['caption']['text']))) != 0:
+                    hashtag_list.extend(re.findall('#\w+',post_detail['caption']['text']))
+                
+                if len(re.findall('@[\w.]+',str(post_detail['caption']['text']))) != 0:
+                    mention_list.extend(re.findall('@[\w.]+',post_detail['caption']['text']))
+
+                like_count += post_detail["likes"]['count']
             
-            if len(re.findall('@[\w.]+',str(post_detail['caption']['text']))) != 0:
-                mention_list.extend(re.findall('@[\w.]+',post_detail['caption']['text']))
-
-            like_count += post_detail["likes"]['count']
-        
-        comment_count += post_detail['comments']['count']
+            comment_count += post_detail['comments']['count']
 
 
     if json_content['profileUser']['bio'] != None:

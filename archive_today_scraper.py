@@ -17,7 +17,7 @@ def get_bio(soup, profile_dict):
     bio = "no bio"
 
     # gets bio for users. depends on if they have their name and Public figure status set
-    if (possible_bio_list[-2].get_text() == ""):
+    if (possible_bio_list[-2] == None or possible_bio_list[-2].get_text() == "" or possible_bio_list[-2].find('span').get_text() == "Verified"):
         if possible_bio_list[-1].find_all('span') != None:
             bio = possible_bio_list[-1].find_all('span')[-1].get_text()
     else:
