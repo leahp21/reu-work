@@ -12,6 +12,10 @@ import re
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+
+'''
+creates term frequency matrix for user hashtags, performs kmeans clustering and MDS, visualizes clusters in plotly
+'''
 def prep_for_clustering(dictionary):
 
     new_df = pd.DataFrame()
@@ -32,15 +36,14 @@ def prep_for_clustering(dictionary):
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 10)
     pd.set_option('display.width', 150)
-
-    #print(new_df)
-
     
+    # multidimensional scaling to reduce the number of dimensions to 2 (since clustering can only be done on 2 dimensional data)
     mds = MDS(n_components=2)
     new_df_reduced = mds.fit_transform(new_df.drop('Username', axis=1))
 
     inertias = []
 
+    # elbow method to determine ideal number of clusters
     for i in range(1,len(dictionary)):
         kmeans = KMeans(n_clusters=i)
         kmeans.fit(new_df_reduced)
@@ -52,11 +55,10 @@ def prep_for_clustering(dictionary):
     plt.ylabel('Inertia')
     plt.show()
 
-    kmeans = KMeans(n_clusters=4, random_state=2)
+    # kmeans clustering with n_clusters number determined by elbow method
+    kmeans = KMeans(n_clusters=5, random_state=40)
     kmeans.fit(new_df_reduced)
-    clusters = kmeans.labels_
-    #new_df['cluster'] = clusters
-    #df_sorted = new_df.sort_values(by='cluster')
+    clusters = kmeans.labels_.astype(str)
 
     plt.figure(figsize=(10,8))
 
@@ -67,28 +69,14 @@ def prep_for_clustering(dictionary):
 
     plot = px.scatter(df_user_added, x=0, y=1, color=clusters, hover_name='Username', title="Health Authority and Anti-vax Clustering")
 
-    #plt.scatter(new_df_reduced[:, 0], new_df_reduced[:, 1], c=clusters)
     plt.title("Clustering Users by Hashtags")
 
     plot.show()
 
-    '''
-
-    Z = linkage(new_df.drop('Username', axis=1), method='ward')
-    new_df.set_index('Username', inplace=True)
-
-    
-
-    plt.figure(figsize=(10, 8))
-    dendrogram(Z, labels=new_df.index, leaf_rotation=90)
-    plt.title('Dendrogram')
-    plt.xlabel('Words')
-    plt.ylabel('Distance')
-    plt.show()
-    '''
-
-# Convert the scaled features back to a DataFrame
-
+'''
+potential groupings of user hashtags. I started this to potentially train a classifier but didn't have enough data. Could be a nice starting point for future
+classification of hashtags
+'''
 def classify_hashtags(dictionary):
 
     new_df = pd.DataFrame()
@@ -190,7 +178,9 @@ def classify_hashtags(dictionary):
         
     print (new_df)
 
-
+'''
+determine term frequency for hashtags by counting the number of times a user uses a specific hashtag, divided by the total number of hashtags available for that user
+'''
 def hash_count_list_function(target_hashtag, dictionary):
     hash_count_list = []
 
@@ -206,26 +196,12 @@ def hash_count_list_function(target_hashtag, dictionary):
         hash_count = hash_count
         hash_count_list.append(hash_count/len(value_list))
 
-        '''
-        tfidf = TfidfVectorizer()
-        result = tfidf.fit_transform(dictionary[key]).toarray()
-        print(tfidf.vocabulary_)
-        print(result)        
-
-        if target_hashtag in tfidf.vocabulary_.keys():
-            hashtag_index = tfidf.vocabulary_[target_hashtag]
-            doc_index = list(dictionary.keys()).index(key)
-            hash_count_list.append(result[doc_index][hashtag_index])
-        else:
-            hash_count_list.append(0)
-        
-    print(hash_count_list)
-
-        '''
     
     return hash_count_list
 
-
+'''
+make dictionary of hashtags
+'''
 def generate_hashtag_dictionary(filename):
 
     hashtag_dictionary = {}
@@ -266,4 +242,3 @@ if __name__ == "__main__":
     dictionary = generate_hashtag_dictionary(args.csv_text_file)
 
     prep_for_clustering(dictionary)
-    # classify_hashtags(dictionary)

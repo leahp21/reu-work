@@ -13,9 +13,6 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-def memgator_for_link(url):
-    dict_of_links = {}
-
 '''
 collect memgator html
 '''
@@ -74,7 +71,7 @@ def split_memento_links(filename):
     return valid_links 
 
 '''
-sends memento links to scraper (for web.archive.org links) and 
+sends memento links to scraper (for web.archive.org links), otherwise, archive.is scraper will scrape mementos
 '''
 def send_to_scraper(memento_dict):
     # open scraper up and send the link to the scraper. put output in a json file
@@ -87,7 +84,6 @@ def send_to_scraper(memento_dict):
         if memento_type == 'wayback':
 
             for wayback_mem_url in memento_dict['wayback']:
-                print('reached')
                 wayback_data = process_wayback_mem(wayback_mem_url, wayback_data)
                 time.sleep(30)
 
@@ -107,7 +103,9 @@ def send_to_scraper(memento_dict):
 
     return result
 
-
+'''
+looks at JSON Wayback Machine output and takes out followers, caption, post count, etc from JSON
+'''
 def process_wayback_mem(mem_link, data_chart):
 
     scraper_command = "python3 instagram_memento_scrape.py --urim " + mem_link[0] + " > scraper_output.json"
@@ -164,6 +162,9 @@ def process_wayback_mem(mem_link, data_chart):
 
     return data_chart
 
+'''
+looks at JSON archive.today output and takes out followers, caption, post count, etc from JSON
+'''
 def process_archive_mem(archive_today_link, data_chart):
      
     scraper_command = "python3 archive_today_scraper.py --urim " + archive_today_link[0] + " > scraper_output.json"
