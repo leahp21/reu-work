@@ -6,12 +6,15 @@ import matplotlib.pyplot as plt
 import math 
 import argparse
 import sys
+import seaborn as sns
 
 def create_graph(hashtag_dict):
     G = nx.Graph()
     color_map = {}
     size_map = {}
     font_map = {}
+
+    plt.figure(figsize=(8, 6))
 
     for name, hashtag_list in hashtag_dict.items():
 
@@ -34,13 +37,39 @@ def create_graph(hashtag_dict):
                     font_map[hashtag] = 6
                     G.add_edge(name,hashtag)
 
-    node_colors = [color_map[node] for node in G.nodes]
-    node_sizes = [size_map[node] for node in G.nodes]
+    # go through all of the nodes, if node is a hashtag node, 
 
-    pos = nx.spring_layout(G, k=.30)
+    H = nx.MultiGraph()
 
-    plt.figure(3, figsize=(12,12))
-    nx.draw(G, with_labels=True, node_color=node_colors, font_size=5, node_size=node_sizes, pos = pos)
+    for name, hashtag in hashtag_dict.items():
+        H.add_node(name)
+
+    for node in G.nodes:
+        if '#' in node:
+            neighbors = list(G.neighbors(node))
+            for i in range(len(neighbors)):
+                for j in range(i+1, len(neighbors)):
+                    H.add_edge(neighbors[i], neighbors[j])
+
+    node_mapping = {node: idx for idx, node in enumerate(H.nodes())}
+
+    n = len(H.nodes)
+    adj_matrix = np.zeros((n, n))
+
+    for u, v in H.edges():
+        adj_matrix[node_mapping[u], node_mapping[v]] += 1
+        adj_matrix[node_mapping[v], node_mapping[u]] += 1 
+
+    pd.set_option("display.precision", 0) 
+
+    node_labels = [node for node in H.nodes()]
+
+    ax = sns.heatmap(adj_matrix, annot=True, cmap='coolwarm', center=5, xticklabels=node_labels, yticklabels=node_labels, fmt='g')
+
+    ax.set_xticklabels(node_labels, rotation=45, ha='right')
+
+    plt.title("Connecting Instagram Accounts through Co-occuring Hashtag Frequency")
+    plt.tight_layout()
     
     plt.show()
 
@@ -133,15 +162,41 @@ def co_occur_graph(hashtag_dict):
                         font_map[hashtag] = 6
                         G.add_edge(name,hashtag)
                         G.add_edge(other_name,hashtag)
+    
+    H = nx.MultiGraph()
 
-    node_colors = [color_map[node] for node in G.nodes]
-    node_sizes = [size_map[node] for node in G.nodes]
+    for name, hashtag in hashtag_dict.items():
+        H.add_node(name)
 
-    pos = nx.spring_layout(G, k=.30)
+    for node in G.nodes:
+        if '#' in node:
+            neighbors = list(G.neighbors(node))
+            for i in range(len(neighbors)):
+                for j in range(i+1, len(neighbors)):
+                    H.add_edge(neighbors[i], neighbors[j])
 
-    plt.figure(3, figsize=(12,12))
-    nx.draw(G, with_labels=True, node_color=node_colors, font_size=5, node_size=node_sizes, pos = pos)
+    node_mapping = {node: idx for idx, node in enumerate(H.nodes())}
 
+    n = len(H.nodes)
+    adj_matrix = np.zeros((n, n))
+
+    for u, v in H.edges():
+        adj_matrix[node_mapping[u], node_mapping[v]] += 1
+        adj_matrix[node_mapping[v], node_mapping[u]] += 1 
+
+    pd.set_option("display.precision", 0) 
+
+    #adj_matrix = nx.adjacency_matrix(H).todense()
+
+    node_labels = [node for node in H.nodes()]
+
+    ax = sns.heatmap(adj_matrix, annot=True, cmap='coolwarm', center=5, xticklabels=node_labels, yticklabels=node_labels, fmt='g')
+
+    ax.set_xticklabels(node_labels, rotation=45, ha='right')
+
+    plt.title("Connecting Instagram Accounts through Co-occuring Hashtag Frequency")
+    plt.tight_layout()
+    
     plt.show()
 
 
