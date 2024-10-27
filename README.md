@@ -57,4 +57,10 @@ python3 cluster_hashtags.py [list_of_csvs]
 **Mention and Hashtag network graphs**
 
 The Mention and Hashtag network graphs are in two separate scripts: network_graphs_mentions.py and network_graphs_hashtags.py. Both scripts require a text file of CSV's. The scripts create social
-networks by connecting users by the hashtags and mentions that they have in common. The hashtag node size is adjusted based on frequency. An example of the hashtag graph is the output is health_and_anti_total_graph.png, which is located in graph_and_charts. 
+networks by connecting users by the hashtags and mentions that they have in common. The hashtag node size is adjusted based on frequency. An example of the hashtag graph is the output is health_and_anti_total_graph.png, which is located in graph_and_charts. To best identify hashtags that are being used by both reputable sources and disinformation actors, the Python script that generates the network graph will have an optional -c flag. By using the -c flag, only inter-group hashtags will be shown. 
+
+Example usage:
+
+```
+python3 network_graph_hashtags.py [-c] [list_of_csvs]
+```
