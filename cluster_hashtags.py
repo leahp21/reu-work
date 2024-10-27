@@ -56,7 +56,7 @@ def prep_for_clustering(dictionary):
     plt.show()
 
     # kmeans clustering with n_clusters number determined by elbow method
-    kmeans = KMeans(n_clusters=5, random_state=40)
+    kmeans = KMeans(n_clusters=5, random_state=42, n_init=10)
     kmeans.fit(new_df_reduced)
     clusters = kmeans.labels_.astype(str)
 
@@ -69,9 +69,28 @@ def prep_for_clustering(dictionary):
 
     plot = px.scatter(df_user_added, x=0, y=1, color=clusters, hover_name='Username', title="Health Authority and Anti-vax Clustering")
 
+    plot.update_layout(
+        plot_bgcolor='white'
+    )
+    
+    plot.update_xaxes(
+            mirror=True,
+            showline=True,
+            ticks='outside',
+            linecolor='black'
+    )
+
+    plot.update_yaxes(
+            mirror=True,
+            showline=True,
+            ticks='outside',
+            linecolor='black'
+    )
+    
+    plot.update_traces(marker=dict(size=15))
     plt.title("Clustering Users by Hashtags")
 
-    plot.show()
+    plot.write_html('health_anti_clustering.html', auto_open=True)
 
 '''
 potential groupings of user hashtags. I started this to potentially train a classifier but didn't have enough data. Could be a nice starting point for future
